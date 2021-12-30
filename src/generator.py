@@ -58,7 +58,7 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 	def __len__(self):
 		'Denotes the number of batches per epoch'
 #		return int(np.floor(len(self.list_IDs) / self.batch_size))
-		n_batches = int(np.floor(self.coords.shape[0] / self.batch_size))
+		n_batches = int(np.floor(self.indexes.shape[0] / self.batch_size))
 		ic(n_batches)
 		return n_batches
 	def __getitem__(self, index):
@@ -75,7 +75,7 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 		X, y = self.__data_generation(coords_batch)
 
 		return X, y
-	
+
 	def on_epoch_end(self):
 		'Updates indexes after each epoch'
 #		self.indexes = np.arange(len(self.list_IDs))
@@ -83,7 +83,8 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 
 		if self.shuffle == True:
 			np.random.shuffle(self.indexes)
-
+		# self.indexes = self.indexes[:20000]
+		#self.indexes = np.random.choice(self.indexes, 5000)
 	def data_augmentation(self, X, Y):
 		transf = np.random.randint(0,6,1)
 		if transf == 0:

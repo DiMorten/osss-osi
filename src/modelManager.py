@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 
 from icecream import ic
 import cv2
-import gdal
 import pathlib
 import time
 from sklearn import metrics

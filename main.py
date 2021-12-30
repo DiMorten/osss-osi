@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from icecream import ic
 import cv2
-import gdal
+
 import pathlib
 import time
 from sklearn import metrics
@@ -30,6 +30,8 @@ os.getcwd()
 from src.dataset import Dataset
 from params.paramsTrain import paramsTrain
 from src.modelManager import ModelManager
+#ic(tf.config.list_physical_devices('GPU'))
+#pdb.set_trace()
 paramsTrainCustom = {
     "dataPath": Path("E:/Jorge/oil_dataset/dataset_original/")
 }

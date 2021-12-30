@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 
 from icecream import ic
 import cv2
-import gdal
 import pathlib
 import time
 from sklearn import metrics
@@ -141,7 +140,7 @@ class Dataset():
 			'n_classes': self.pt.class_n, # it was 6. Now it is 13 + 1 = 14
 
 			'n_channels': 3,
-			'shuffle': False,
+			'shuffle': True,
 #			'printCoords': False,
 			'augm': True}        
         self.Y = self.Y[...,0]
