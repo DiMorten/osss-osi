@@ -72,10 +72,10 @@ class Dataset():
             X.append(x)
             Y.append(y)
 #            pdb.set_trace()
-        self.X = np.stack(X, axis = 0)
-        self.Y = np.stack(Y, axis = 0)
-        ic(self.X.shape, self.Y.shape)
-
+        self.X_train = np.stack(X, axis = 0)
+        self.Y_train = np.stack(Y, axis = 0)
+        ic(self.X_train.shape, self.Y_train.shape)
+        self.Y_train = self.Y_train[...,0]
 
     def extractCoords(self, num_ims = 1002, rows = 650, cols = 1250, patch_size = 250, overlap_percent=0):
 
@@ -110,8 +110,9 @@ class Dataset():
     def addPadding(self):
         pad_tuple = ((0, 0),) + self.pad_tuple_msk + ((0, 0),) 
         ic(pad_tuple)
-        self.X = np.pad(self.X, pad_tuple, mode = 'symmetric')
-        self.Y = np.pad(self.Y, pad_tuple, mode = 'symmetric')
+        self.X_train = np.pad(self.X_train, pad_tuple, mode = 'symmetric')
+        self.Y_train = np.pad(self.Y_train, pad_tuple, mode = 'symmetric')
+        
     def toOneHot(self, label, class_n):
 
         # convert to one-hot
@@ -143,18 +144,23 @@ class Dataset():
 			'shuffle': True,
 #			'printCoords': False,
 			'augm': True}        
-        self.Y = self.Y[...,0]
-        ic(self.X.shape, self.Y.shape)
-        ic(np.unique(self.Y, return_counts=True))
-        '''
-        im_n, h, w = self.Y.shape
-#        unique = np.unique(self.Y)
-#        class_n = len(unique)        
-        self.Y = np.reshape(self.Y, -1)
-        self.Y = self.toOneHot(self.Y, class_n = self.pt.class_n)
-        self.Y = np.reshape(self.Y, (im_n, h, w, self.pt.class_n))
-        ic(self.X.shape, self.Y.shape)
-        '''
-        self.trainGenerator = DataGeneratorWithCoords(self.X, self.Y, 
+        
+        ic(self.X_train.shape, self.Y_train.shape)
+        ic(np.unique(self.Y_train, return_counts=True))
+
+        self.trainGenerator = DataGeneratorWithCoords(self.X_train, self.Y_train, 
 					self.patch_coords, **params_train)
 
+        params_validation = params_train.copy()
+        params_validation['shuffle'] = False
+        params_validation['augm'] = False
+
+        self.validationGenerator = DataGeneratorWithCoords(self.X_validation, self.Y_validation, 
+					self.patch_coords, **params_validation)
+
+    def trainValSplit(self, validation_split=0.15):
+        idxs = range(self.pt.num_ims_train)
+        self.X_train, self.X_validation, self.Y_train, self.Y_validation = train_test_split(
+                self.X_train, self.Y_train, test_size = validation_split)
+        self.num_ims_train = self.X_train.shape[0]
+        
