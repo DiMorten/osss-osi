@@ -44,19 +44,18 @@ class ModelManager():
 			metrics = metrics)
 	
 
-	def fit(self, trainGenerator):
+	def fit(self, trainGenerator, validationGenerator):
 		#callbacks = [MonitorGenerator(
 		#		validation=validation_generator,
 		#		patience=10, classes=self.pt.class_n)]
-#        callbacks = [EarlyStopping(monitor='val_loss', )]
-		callbacks = None
+		es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
+		mc = ModelCheckpoint('best_model.h5', monitor='val_accuracy', mode='max', verbose=1, save_best_only=True)
+
+		callbacks = [es, mc]
 		history = self.model.fit(trainGenerator,
-#			batch_size = self.batch['train']['size'], 
+			batch_size = self.pt.batch_size, 
 			epochs = 70, 
-#			validation_data=validation_generator,
-#			validation_data=(data.patches['val']['in'], data.patches['val']['label']),
-#			callbacks = [es])
-#			callbacks = [MonitorNPY(
-			callbacks = callbacks, # it was 5
+			validation_data=validationGenerator,
+			callbacks = callbacks,
 			shuffle = False
 			)

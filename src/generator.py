@@ -83,7 +83,7 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 
 		if self.shuffle == True:
 			np.random.shuffle(self.indexes)
-		# self.indexes = self.indexes[:20000]
+		self.indexes = self.indexes[:20000]
 		#self.indexes = np.random.choice(self.indexes, 5000)
 	def data_augmentation(self, X, Y):
 		transf = np.random.randint(0,6,1)

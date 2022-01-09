@@ -27,26 +27,27 @@ t0 = time.time()
 import os
 os.getcwd()
 
-from src.dataset import Dataset
+from src.dataset import Dataset, extract_coords
 from params.paramsTrain import paramsTrain
 from src.modelManager import ModelManager
 #ic(tf.config.list_physical_devices('GPU'))
 #pdb.set_trace()
 paramsTrainCustom = {
-    "dataPath": Path("E:/Jorge/oil_dataset/dataset_original/")
+    "dataPath": Path("D:/jorg/phd/dataset_original/")
 }
 
 pt = paramsTrain(**paramsTrainCustom)
 
 ds = Dataset(pt)
 ds.load()
-ds.extractCoords(rows = pt.h,
-        cols = pt.w,
-        num_ims = pt.num_ims_train,
-        patch_size = pt.patch_size)
+
+ds.trainValSplit(0.15)
+
+ds.extractCoords()
  # to do: extracts train and also test coords
 
 ds.addPadding()
+
 
 ds.setTrainGenerator(rows = pt.h,
         cols = pt.w,
@@ -57,7 +58,7 @@ modelManager = ModelManager(pt)
 modelManager.setArchitecture(Unet)
 
 modelManager.configure()
-modelManager.fit(ds.trainGenerator)
+modelManager.fit(ds.trainGenerator, ds.validationGenerator)
 pdb.set_trace()
 '''
 arch = Unet()

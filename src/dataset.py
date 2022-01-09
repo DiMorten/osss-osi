@@ -27,7 +27,8 @@ os.getcwd()
 import pdb
 
 from src.generator import DataGeneratorWithCoords
-def extractCoords(num_ims, rows, cols, patch_size, overlap_percent=0):
+from sklearn.model_selection import train_test_split
+def extract_coords(num_ims, rows, cols, patch_size, overlap_percent=0):
 
     """
     Everything  in this function is made operating with
@@ -36,14 +37,14 @@ def extractCoords(num_ims, rows, cols, patch_size, overlap_percent=0):
 
 
     # Percent of overlap between consecutive patches.
-    overlap = round(patch_size * percent)
+    overlap = round(patch_size * overlap_percent)
     overlap -= overlap % 2
     stride = patch_size - overlap
     # Add Padding to the image to match with the patch size
     step_row = (stride - rows % stride) % stride
     step_col = (stride - cols % stride) % stride
-    pad_tuple_msk = ( (overlap//2, overlap//2 + step_row), ((overlap//2, overlap//2 + step_col)) )
-#    lbl = np.pad(lbl, pad_tuple_msk, mode = 'symmetric')
+    pad_tuple_mask = ( (overlap//2, overlap//2 + step_row), ((overlap//2, overlap//2 + step_col)) )
+#    lbl = np.pad(lbl, pad_tuple_mask, mode = 'symmetric')
 
     k1, k2 = (rows+step_row)//stride, (cols+step_col)//stride
     print('Total number of patches: %d x %d' %(k1, k2))
@@ -54,7 +55,7 @@ def extractCoords(num_ims, rows, cols, patch_size, overlap_percent=0):
             for j in range(k2):
                 patch_coords.append((im_id, i*stride, j*stride))
     print("Patch coords ",len(patch_coords))
-    return patch_coords, step_row, step_col, overlap
+    return np.asarray(patch_coords), step_row, step_col, overlap, pad_tuple_mask
 
 class Dataset():
     def __init__(self, pt):
@@ -77,6 +78,8 @@ class Dataset():
         ic(self.X_train.shape, self.Y_train.shape)
         self.Y_train = self.Y_train[...,0]
 
+
+
     def extractCoords(self, num_ims = 1002, rows = 650, cols = 1250, patch_size = 250, overlap_percent=0):
 
 
@@ -85,34 +88,30 @@ class Dataset():
         the upper left corner of the patch
         """
 
+        self.patch_coords_train, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+            self.X_train.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
-        # Percent of overlap between consecutive patches.
-        self.overlap = round(patch_size * overlap_percent)
-        self.overlap -= self.overlap % 2
-        stride = patch_size - self.overlap
-        # Add Padding to the image to match with the patch size
-        self.step_row = (stride - rows % stride) % stride
-        self.step_col = (stride - cols % stride) % stride
-        self.pad_tuple_msk = ( (self.overlap//2, self.overlap//2 + self.step_row), (self.overlap//2, self.overlap//2 + self.step_col) )
-    #    lbl = np.pad(lbl, pad_tuple_msk, mode = 'symmetric')
+        ic(self.patch_coords_train.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-        k1, k2 = (rows+self.step_row)//stride, (cols+self.step_col)//stride
-        print('Total number of patches: %d x %d' %(k1, k2))
+        self.patch_coords_validation, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+            self.X_validation.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
-        self.patch_coords = []
-        for im_id in range(num_ims):
-            for i in range(k1):
-                for j in range(k2):
-                    self.patch_coords.append((im_id, i*stride, j*stride))
-        self.patch_coords = np.asarray(self.patch_coords)
-        ic(self.patch_coords.shape, self.step_row, self.step_col, self.overlap)
-    
+        ic(self.patch_coords_validation.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+  
     def addPadding(self):
-        pad_tuple = ((0, 0),) + self.pad_tuple_msk + ((0, 0),) 
+        pad_tuple = ((0, 0),) + self.pad_tuple_mask + ((0, 0),) 
+        Y_pad_tuple = ((0, 0),) + self.pad_tuple_mask
+
         ic(pad_tuple)
         self.X_train = np.pad(self.X_train, pad_tuple, mode = 'symmetric')
-        self.Y_train = np.pad(self.Y_train, pad_tuple, mode = 'symmetric')
-        
+        ic(self.Y_train.shape)
+        self.Y_train = np.pad(self.Y_train, Y_pad_tuple, mode = 'symmetric')
+
+        self.X_validation = np.pad(self.X_validation, pad_tuple, mode = 'symmetric')
+        ic(self.Y_validation.shape)
+        self.Y_validation = np.pad(self.Y_validation, Y_pad_tuple, mode = 'symmetric')
+
+
     def toOneHot(self, label, class_n):
 
         # convert to one-hot
@@ -149,18 +148,20 @@ class Dataset():
         ic(np.unique(self.Y_train, return_counts=True))
 
         self.trainGenerator = DataGeneratorWithCoords(self.X_train, self.Y_train, 
-					self.patch_coords, **params_train)
+					self.patch_coords_train, **params_train)
 
         params_validation = params_train.copy()
         params_validation['shuffle'] = False
         params_validation['augm'] = False
 
         self.validationGenerator = DataGeneratorWithCoords(self.X_validation, self.Y_validation, 
-					self.patch_coords, **params_validation)
+					self.patch_coords_validation, **params_validation)
+
 
     def trainValSplit(self, validation_split=0.15):
         idxs = range(self.pt.num_ims_train)
         self.X_train, self.X_validation, self.Y_train, self.Y_validation = train_test_split(
                 self.X_train, self.Y_train, test_size = validation_split)
         self.num_ims_train = self.X_train.shape[0]
+        ic(self.X_train.shape, self.X_validation.shape, self.Y_train.shape, self.Y_validation.shape)
         
