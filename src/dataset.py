@@ -136,13 +136,11 @@ class Dataset():
 			'dim': (patch_size,patch_size),
 			'label_dim': (patch_size,patch_size),
 			'batch_size': self.pt.batch_size,
-#			'n_classes': self.class_n,
 			'n_classes': self.pt.class_n, # it was 6. Now it is 13 + 1 = 14
-
 			'n_channels': 3,
 			'shuffle': True,
-#			'printCoords': False,
-			'augm': True}        
+			'augm': True,
+            'subsample': False}        
         
         ic(self.X_train.shape, self.Y_train.shape)
         ic(np.unique(self.Y_train, return_counts=True))
@@ -153,9 +151,14 @@ class Dataset():
         params_validation = params_train.copy()
         params_validation['shuffle'] = False
         params_validation['augm'] = False
+        params_validation['subsample'] = False
 
         self.validationGenerator = DataGeneratorWithCoords(self.X_validation, self.Y_validation, 
 					self.patch_coords_validation, **params_validation)
+
+        params_test = params_validation.copy()
+        self.testGenerator = DataGeneratorWithCoords(self.X_test, self.Y_test, 
+					self.patch_coords_test, **params_test)
 
 
     def trainValSplit(self, validation_split=0.15):

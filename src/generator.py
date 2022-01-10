@@ -32,7 +32,7 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 	def __init__(self, inputs, labels, coords, samples_per_epoch = None,
 				batch_size=16, dim=(1002, 250, 250), label_dim=(1002, 250, 250),
 				n_channels=3, n_classes=4, shuffle=False, center_pixel = False, printCoords=False,
-				augm = False):
+				augm = False, subsample = False):
 		'Initialization'
 		self.inputs = inputs
 		self.dim = dim
@@ -53,6 +53,7 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 		self.augm = augm
 
 		self.samples_per_epoch = samples_per_epoch
+		self.subsample = subsample
 		self.on_epoch_end()
 
 	def __len__(self):
@@ -83,8 +84,11 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 
 		if self.shuffle == True:
 			np.random.shuffle(self.indexes)
-		self.indexes = self.indexes[:20000]
-		#self.indexes = np.random.choice(self.indexes, 5000)
+		if self.subsample == True:
+#			self.indexes = self.indexes[:20000]
+			idxs = np.arange(self.indexes.shape[0])
+			idxs = np.random.choice(idxs, 20000)
+			self. indexes = self.indexes[idxs]
 	def data_augmentation(self, X, Y):
 		transf = np.random.randint(0,6,1)
 		if transf == 0:

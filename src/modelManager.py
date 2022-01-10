@@ -49,7 +49,7 @@ class ModelManager():
 		#		validation=validation_generator,
 		#		patience=10, classes=self.pt.class_n)]
 		es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
-		mc = ModelCheckpoint('best_model.h5', monitor='val_accuracy', mode='max', verbose=1, save_best_only=True)
+		mc = ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', verbose=1, save_best_only=True)
 
 		callbacks = [es, mc]
 		history = self.model.fit(trainGenerator,
