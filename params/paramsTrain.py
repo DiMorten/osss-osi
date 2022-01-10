@@ -1,6 +1,7 @@
 class paramsTrain():
     def __init__(self, **kwargs):
         self.dataPath = "" if ('dataPath' not in kwargs.keys()) else kwargs['dataPath']
+        self.mode = "train" if ('mode' not in kwargs.keys()) else kwargs['mode']
         self.class_n = 5
         self.h = 650
         self.w = 1250

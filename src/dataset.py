@@ -60,10 +60,11 @@ def extract_coords(num_ims, rows, cols, patch_size, overlap_percent=0):
 class Dataset():
     def __init__(self, pt):
         self.pt = pt
-    def load(self):
-        ic(self.pt.dataPath / "train")
-        x_list = glob.glob(str(self.pt.dataPath / "train" / "images") + "/*")
-        y_list = glob.glob(str(self.pt.dataPath / "train" / "labels_1D") + "/*")
+
+    def loadSet(self, folderName):
+        ic(self.pt.dataPath / folderName)
+        x_list = glob.glob(str(self.pt.dataPath / folderName / "images") + "/*")
+        y_list = glob.glob(str(self.pt.dataPath / folderName / "labels_1D") + "/*")
         X = []
         Y = []
         for idx, (x_name, y_name) in enumerate(zip(x_list, y_list)):
@@ -73,10 +74,16 @@ class Dataset():
             X.append(x)
             Y.append(y)
 #            pdb.set_trace()
-        self.X_train = np.stack(X, axis = 0)
-        self.Y_train = np.stack(Y, axis = 0)
-        ic(self.X_train.shape, self.Y_train.shape)
-        self.Y_train = self.Y_train[...,0]
+        X_np = np.stack(X, axis = 0)
+        Y_np = np.stack(Y, axis = 0)[...,0]
+        return X_np, Y_np 
+    def load(self):
+        self.X_train, self.Y_train = self.loadSet("train")
+        self.X_test, self.Y_test = self.loadSet("test")
+    
+        ic(self.X_train.shape, self.Y_train.shape, self.X_test.shape, self.Y_test.shape)
+
+        
 
 
 
@@ -97,7 +104,12 @@ class Dataset():
             self.X_validation.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
         ic(self.patch_coords_validation.shape, step_row, step_col, overlap, self.pad_tuple_mask)
-  
+
+        self.patch_coords_test, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+            self.X_test.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
+
+        ic(self.patch_coords_test.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+
     def addPadding(self):
         pad_tuple = ((0, 0),) + self.pad_tuple_mask + ((0, 0),) 
         Y_pad_tuple = ((0, 0),) + self.pad_tuple_mask
@@ -111,6 +123,9 @@ class Dataset():
         ic(self.Y_validation.shape)
         self.Y_validation = np.pad(self.Y_validation, Y_pad_tuple, mode = 'symmetric')
 
+        self.X_test = np.pad(self.X_test, pad_tuple, mode = 'symmetric')
+        ic(self.Y_test.shape)
+        self.Y_test = np.pad(self.Y_test, Y_pad_tuple, mode = 'symmetric')
 
     def toOneHot(self, label, class_n):
 

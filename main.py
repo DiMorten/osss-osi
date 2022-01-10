@@ -31,9 +31,11 @@ from src.dataset import Dataset, extract_coords
 from params.paramsTrain import paramsTrain
 from src.modelManager import ModelManager
 #ic(tf.config.list_physical_devices('GPU'))
-#pdb.set_trace()
+
 paramsTrainCustom = {
-    "dataPath": Path("D:/jorg/phd/dataset_original/")
+    "dataPath": Path("D:/jorg/phd/dataset_original/"),
+    "mode": "inference",  # train, inference
+    "modelId": "augmentation"
 }
 
 pt = paramsTrain(**paramsTrainCustom)
@@ -44,10 +46,8 @@ ds.load()
 ds.trainValSplit(0.15)
 
 ds.extractCoords()
- # to do: extracts train and also test coords
 
 ds.addPadding()
-
 
 ds.setTrainGenerator(rows = pt.h,
         cols = pt.w,
@@ -58,14 +58,9 @@ modelManager = ModelManager(pt)
 modelManager.setArchitecture(Unet)
 
 modelManager.configure()
-modelManager.fit(ds.trainGenerator, ds.validationGenerator)
+if pt.mode == "train":
+        modelManager.fit(ds.trainGenerator, ds.validationGenerator)
+elif pt.mode == "inference":
+        modelManager.loadWeights()
+        modelManager.evaluate(ds)        
 pdb.set_trace()
-'''
-arch = Unet()
-
-modelManager = ModelManager()
-modelManager.setArch(arch)
-modelManager.setData(ds)
-modelManager.configure()
-modelManager.fit()
-'''
