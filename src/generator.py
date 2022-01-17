@@ -120,9 +120,10 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 	
 		'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
 		# Initialization
-		X = np.empty((self.batch_size, *self.dim, self.n_channels), dtype=np.float32)
+		label_dtype = np.float16
+		X = np.empty((self.batch_size, *self.dim, self.n_channels), dtype=label_dtype)
 #		Y = np.empty((self.batch_size, *self.label_dim, self.n_classes), dtype=int)
-		Y = np.empty((self.batch_size, *self.label_dim), dtype=int)
+		Y = np.empty((self.batch_size, *self.label_dim), dtype=label_dtype)
 
 		if self.printCoords:
 			ic(coords_batch)
@@ -199,7 +200,7 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 
 			X[idx] = input_patch
 #			Y[idx] = toOneHot(label_patch)
-			Y[idx] = label_patch
+			Y[idx] = label_patch.astype(label_dtype)
 		coords_print = False
 		if coords_print == True:
 			ic(coords_batch)

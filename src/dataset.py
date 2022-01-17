@@ -76,13 +76,14 @@ class Dataset():
 #            pdb.set_trace()
         X_np = np.stack(X, axis = 0)
         Y_np = np.stack(Y, axis = 0)[...,0]
-        return X_np, Y_np 
+        return X_np.astype(np.float16), Y_np.astype(np.float16) 
     def load(self):
         self.X_train, self.Y_train = self.loadSet("train")
         self.X_test, self.Y_test = self.loadSet("test")
     
         ic(self.X_train.shape, self.Y_train.shape, self.X_test.shape, self.Y_test.shape)
-
+        ic(self.X_train.dtype, self.Y_train.dtype, self.X_test.dtype, self.Y_test.dtype)
+        #pdb.set_trace()
         
 
 
@@ -127,6 +128,14 @@ class Dataset():
         ic(self.Y_test.shape)
         self.Y_test = np.pad(self.Y_test, Y_pad_tuple, mode = 'symmetric')
 
+    def removePadding(self, x):
+        ic(self.pad_tuple_mask)
+        ic(x.shape)
+        x = x[:, :-self.pad_tuple_mask[0][1], :-self.pad_tuple_mask[1][1]]
+        # ic(x.shape)
+        # pdb.set_trace()
+
+        return x
     def toOneHot(self, label, class_n):
 
         # convert to one-hot
@@ -153,8 +162,8 @@ class Dataset():
 			'batch_size': self.pt.batch_size,
 			'n_classes': self.pt.class_n, # it was 6. Now it is 13 + 1 = 14
 			'n_channels': 3,
-			'shuffle': True,
-			'augm': True,
+			'shuffle': False,
+			'augm': False,
             'subsample': False}        
         
         ic(self.X_train.shape, self.Y_train.shape)

@@ -30,37 +30,34 @@ os.getcwd()
 from src.dataset import Dataset, extract_coords
 from params.paramsTrain import paramsTrain
 from src.modelManager import ModelManager
+from train_and_evaluate import Manager
 #ic(tf.config.list_physical_devices('GPU'))
 
-paramsTrainCustom = {
-    "dataPath": Path("D:/jorg/phd/dataset_original/"),
-    "mode": "inference",  # train, inference
-    "modelId": "augmentation"
-}
+ic.configureOutput(includeContext=True)
 
-pt = paramsTrain(**paramsTrainCustom)
+class ManagerDropout(Manager):
+	def evaluate(self, ds):
+		ds = self.modelManager.evaluateEnsemble(ds)
+		np.save('results/predictions_ensemble.npy', ds.predictions_ensemble)
+		pdb.set_trace()
+		
 
-ds = Dataset(pt)
-ds.load()
+if __name__ == '__main__':
+	paramsTrainCustom = {
+	"dataPath": Path("D:/jorg/phd/dataset_original/"),
+	# "loss": "weighted_categorical_crossentropy",
+	"loss": "categorical_focal",
 
-ds.trainValSplit(0.15)
+	"mode": "inference",  # train, inference
+	"modelId": ""
+	}
 
-ds.extractCoords()
+	pt = paramsTrain(**paramsTrainCustom)
 
-ds.addPadding()
+	manager = ManagerDropout(pt)
 
-ds.setTrainGenerator(rows = pt.h,
-        cols = pt.w,
-        num_ims = pt.num_ims_train,
-        patch_size = pt.patch_size)
+	manager.main()
 
-modelManager = ModelManager(pt)
-modelManager.setArchitecture(Unet)
 
-modelManager.configure()
-if pt.mode == "train":
-        modelManager.fit(ds.trainGenerator, ds.validationGenerator)
-elif pt.mode == "inference":
-        modelManager.loadWeights()
-        modelManager.evaluate(ds)        
-pdb.set_trace()
+
+
