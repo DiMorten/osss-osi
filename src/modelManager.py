@@ -27,7 +27,7 @@ t0 = time.time()
 import os
 os.getcwd()
 import pdb
-from src.loss import categorical_focal, weighted_categorical_crossentropy, weighted_categorical_focal
+from src.loss import categorical_focal, weighted_categorical_crossentropy, weighted_categorical_focal, categorical_crossentropy
 from src.monitor import Monitor
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.utils.class_weight import compute_class_weight
@@ -45,18 +45,21 @@ class ModelManager():
 		self.weights = self.weights.astype(np.float16)
 		ic(np.unique(y, return_counts=True))
 		ic(self.weights)
-		#ic(self.weights2)
-		#pdb.set_trace()
+
 	def configure(self):
 		if self.pt.loss == "categorical_focal":
 			# loss=categorical_focal(alpha=0.25,gamma=2)
 			# self.weights = np.asarray([1,1,1,1,1])
+			self.weights = np.asarray([1,22,3.6,50,3.6])
+			
 			loss=weighted_categorical_focal(
 				self.weights, 
 				alpha=0.25,gamma=2)
 			
 		elif self.pt.loss == "weighted_categorical_crossentropy":
 			loss = weighted_categorical_crossentropy(self.weights)
+		elif self.pt.loss == "categorical_crossentropy":
+			loss = categorical_crossentropy()
 		metrics=['accuracy']
 
 		optimizer = Adam(lr=self.pt.learning_rate, beta_1=0.9)
@@ -96,26 +99,11 @@ class ModelManager():
 		f1 = f1_score(ds.Y_test.flatten(), ds.predictions.flatten(), average=None)
 		oa = accuracy_score(ds.Y_test.flatten(), ds.predictions.flatten())
 		ic(f1_avg, f1, oa)
-		id_ = 1
-		cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
-		cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
-		id_ = 81
-		cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
-		cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
-		id_ = 32
-		cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
-		cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
-		id_ = 45
-		cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
-		cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
-		id_ = 42
-		cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
-		cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
-		id_ = 81
-		cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
-		cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
 
-		pdb.set_trace()
+		qualitative_results_id = [1, 81, 32, 45, 42, 81]
+		for id_ in qualitative_resuls_id:
+			cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
+			cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
 
 	def evaluateEnsemble(self, ds, times = 10):
 		num_ims_test, h, w = ds.Y_test.shape
@@ -125,10 +113,9 @@ class ModelManager():
 			ic(t)
 			_, prediction_probabilities = self.infer(ds.X_test, ds.Y_test, save_prediction_probability = True)
 			ds.predictions_ensemble[t] = prediction_probabilities.copy()
-		# predictions_ensemble_mean = np.mean(prediction_probabilities, axis = 0)
-		# predictions_ensemble_std = np.std(prediction_probabilities, axis = 0)
+
 		return ds
-		#np.save('')
+
 	def infer(self, X, Y, overlap_percent=0, save_prediction_probability = False):
 		num_ims, rows, cols, _ = X.shape
 		# Percent of overlap between consecutive patches.
