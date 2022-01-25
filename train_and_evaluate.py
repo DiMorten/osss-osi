@@ -72,7 +72,8 @@ class Manager():
 if __name__ == '__main__':
         paramsTrainCustom = {
         "dataPath": Path("D:/jorg/phd/dataset_original/"),
-        "loss": "categorical_crossentropy", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
+        "loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
+        
         "mode": "train",  # mode: train, inference
         "modelId": "1"
         }

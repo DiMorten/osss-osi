@@ -29,7 +29,7 @@ os.getcwd()
 import pdb
 from src.loss import categorical_focal, weighted_categorical_crossentropy, weighted_categorical_focal, categorical_crossentropy
 from src.monitor import Monitor
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import f1_score, accuracy_score, jaccard_score
 from sklearn.utils.class_weight import compute_class_weight
 class ModelManager():
 	def __init__(self, pt, modelId = ""):
@@ -98,7 +98,8 @@ class ModelManager():
 		f1_avg = f1_score(ds.Y_test.flatten(), ds.predictions.flatten(), average='macro')
 		f1 = f1_score(ds.Y_test.flatten(), ds.predictions.flatten(), average=None)
 		oa = accuracy_score(ds.Y_test.flatten(), ds.predictions.flatten())
-		ic(f1_avg, f1, oa)
+		jaccard = jaccard_score(ds.Y_test.flatten(), ds.predictions.flatten(), average='macro')
+		ic(f1_avg, f1, oa, jaccard)
 
 		qualitative_results_id = [1, 81, 32, 45, 42, 81]
 		for id_ in qualitative_resuls_id:
