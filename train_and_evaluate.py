@@ -57,7 +57,8 @@ class Manager():
 
                 self.modelManager = ModelManager(self.pt)
                 self.modelManager.setArchitecture(Unet)
-
+                ic(ds.Y_train.shape)
+                # self.modelManager.computeWeights(ds.Y_train.flatten())
                 self.modelManager.configure()
                 if self.pt.mode == "train":
 
@@ -75,7 +76,7 @@ if __name__ == '__main__':
         "loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
         
         "mode": "train",  # mode: train, inference
-        "modelId": "1"
+        "modelId": "2"
         }
 
         pt = paramsTrain(**paramsTrainCustom)

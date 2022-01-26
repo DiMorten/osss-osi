@@ -31,13 +31,14 @@ from src.loss import categorical_focal, weighted_categorical_crossentropy, weigh
 from src.monitor import Monitor
 from sklearn.metrics import f1_score, accuracy_score, jaccard_score
 from sklearn.utils.class_weight import compute_class_weight
+from icecream import ic
 class ModelManager():
 	def __init__(self, pt, modelId = ""):
 		self.pt = pt
 		self.model_name = "best_model" + self.pt.modelId + ".h5"
 	def setArchitecture(self, modelArchitecture):
 		self.model = modelArchitecture(img_shape = (self.pt.patch_size, self.pt.patch_size, 3), class_n = self.pt.class_n).build()
-
+		ic(self.model)
 	def computeWeights(self, y):
 		unique, count = np.unique(y, return_counts=True) 
 		#self.weights = np.max(count) / count
@@ -48,13 +49,13 @@ class ModelManager():
 
 	def configure(self):
 		if self.pt.loss == "categorical_focal":
-			# loss=categorical_focal(alpha=0.25,gamma=2)
+			loss=categorical_focal(alpha=0.25,gamma=2)
 			# self.weights = np.asarray([1,1,1,1,1])
-			self.weights = np.asarray([1,22,3.6,50,3.6])
+			# self.weights = np.asarray([1,22,3.6,50,3.6])
 			
-			loss=weighted_categorical_focal(
-				self.weights, 
-				alpha=0.25,gamma=2)
+			# loss=weighted_categorical_focal(
+			# 	self.weights, 
+			# 	alpha=0.25,gamma=2)
 			
 		elif self.pt.loss == "weighted_categorical_crossentropy":
 			loss = weighted_categorical_crossentropy(self.weights)
@@ -102,7 +103,7 @@ class ModelManager():
 		ic(f1_avg, f1, oa, jaccard)
 
 		qualitative_results_id = [1, 81, 32, 45, 42, 81]
-		for id_ in qualitative_resuls_id:
+		for id_ in qualitative_results_id:
 			cv2.imwrite('predictions_'+str(id_)+'.png',ds.predictions[id_].astype(np.float32)*50)
 			cv2.imwrite('label_'+str(id_)+'.png',ds.Y_test[id_].astype(np.float32)*50)
 
@@ -153,3 +154,39 @@ class ModelManager():
 		if save_prediction_probability == True:		
 			return predictions, prediction_probabilities
 		return predictions
+
+
+	def loadIntermediateFeatures(self, in_, prediction_dtype = np.float16, debug  = 1):
+	#print(model.summary())
+
+#		layer_names = ['conv_lst_m2d_1', 'activation_6', 'activation_8', 'activation_10']
+		# layer_names = ['conv_lst_m2d', 'activation_5', 'activation_7', 'activation_9']
+		layer_names = ['conv2d_7', 'conv2d_10', 'conv2d_13', 'conv2d_16']
+		upsample_ratios = [8, 4, 2, 1]
+
+		out1 = UpSampling2D(size=(upsample_ratios[0], upsample_ratios[0]))(self.model.get_layer(layer_names[0]).output)
+		out2 = UpSampling2D(size=(upsample_ratios[1], upsample_ratios[1]))(self.model.get_layer(layer_names[1]).output)
+		out3 = UpSampling2D(size=(upsample_ratios[2], upsample_ratios[2]))(self.model.get_layer(layer_names[2]).output)
+		out4 = UpSampling2D(size=(upsample_ratios[3], upsample_ratios[3]))(self.model.get_layer(layer_names[3]).output)
+
+		intermediate_layer_model = Model(inputs=self.model.input, outputs=[out1, #4x4
+															out2, #8x8
+															out3, #16x16
+															out4]) #32x32
+
+		intermediate_features=intermediate_layer_model.predict(in_) 
+
+		if debug > 0:
+			deb.prints(intermediate_features[0].shape)
+
+		intermediate_features = [x.reshape(x.shape[0], -1, x.shape[-1]) for x in intermediate_features]
+		if debug > 0:
+			[deb.prints(intermediate_features[x].shape) for x in [0,1,2,3]]
+
+		intermediate_features = np.squeeze(np.concatenate(intermediate_features, axis=-1))# .astype(prediction_dtype)
+
+
+		if debug > 0:
+			deb.prints(intermediate_features.shape)
+			print("intermediate_features stats", np.min(intermediate_features), np.average(intermediate_features), np.max(intermediate_features))
+		return intermediate_features
