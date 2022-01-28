@@ -74,7 +74,7 @@ class Dataset():
             X.append(x)
             Y.append(y)
 #            pdb.set_trace()
-        X_np = np.stack(X, axis = 0)
+        X_np = np.expand_dims(np.stack(X, axis = 0)[...,0], axis = -1)
         Y_np = np.stack(Y, axis = 0)[...,0]
         return X_np.astype(np.float16), Y_np.astype(np.float16) 
     def load(self):
@@ -84,7 +84,8 @@ class Dataset():
         ic(self.X_train.shape, self.Y_train.shape, self.X_test.shape, self.Y_test.shape)
         ic(self.X_train.dtype, self.Y_train.dtype, self.X_test.dtype, self.Y_test.dtype)
         #pdb.set_trace()
-        
+        ic(np.average(self.X_train))
+        # pdb.set_trace()
 
 
 
@@ -116,6 +117,7 @@ class Dataset():
         Y_pad_tuple = ((0, 0),) + self.pad_tuple_mask
 
         ic(pad_tuple)
+        ic(self.X_train.shape)
         self.X_train = np.pad(self.X_train, pad_tuple, mode = 'symmetric')
         ic(self.Y_train.shape)
         self.Y_train = np.pad(self.Y_train, Y_pad_tuple, mode = 'symmetric')
@@ -161,7 +163,7 @@ class Dataset():
 			'label_dim': (patch_size,patch_size),
 			'batch_size': self.pt.batch_size,
 			'n_classes': self.pt.class_n, # it was 6. Now it is 13 + 1 = 14
-			'n_channels': 3,
+			'n_channels': self.pt.channel_n,
 			'shuffle': False,
 			'augm': False,
             'subsample': False}        
@@ -192,3 +194,5 @@ class Dataset():
         self.num_ims_train = self.X_train.shape[0]
         ic(self.X_train.shape, self.X_validation.shape, self.Y_train.shape, self.Y_validation.shape)
         
+    def trainReduce(self, trainSize = 20):
+        self.patch_coords_train = self.patch_coords_train[0:trainSize]

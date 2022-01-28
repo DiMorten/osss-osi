@@ -35,9 +35,9 @@ from icecream import ic
 class ModelManager():
 	def __init__(self, pt, modelId = ""):
 		self.pt = pt
-		self.model_name = "best_model" + self.pt.modelId + ".h5"
+		self.model_name = "results/best_model" + self.pt.modelId + ".h5"
 	def setArchitecture(self, modelArchitecture):
-		self.model = modelArchitecture(img_shape = (self.pt.patch_size, self.pt.patch_size, 3), class_n = self.pt.class_n).build()
+		self.model = modelArchitecture(img_shape = (self.pt.patch_size, self.pt.patch_size, self.pt.channel_n), class_n = self.pt.class_n).build()
 		ic(self.model)
 	def computeWeights(self, y):
 		unique, count = np.unique(y, return_counts=True) 
@@ -74,11 +74,11 @@ class ModelManager():
 		self.model = load_model(self.model_name, compile=False)
 
 	def fit(self, trainGenerator, validationGenerator):
-
+		lr_reduce = ReduceLROnPlateau(factor=0.9, min_delta=0.0001, patience=5, verbose=1)
 		es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
 		mc = ModelCheckpoint(self.model_name, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
 		monitor = Monitor(validationGenerator, self.pt.class_n)
-		callbacks = [es, mc, monitor]
+		callbacks = [es, mc, monitor, lr_reduce]
 
 		history = self.model.fit(trainGenerator,
 			batch_size = self.pt.batch_size, 

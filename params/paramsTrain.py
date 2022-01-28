@@ -10,7 +10,8 @@ class paramsTrain():
         self.w = 1250
         self.patch_size = 128
         self.num_ims_train = 1002
-        self.learning_rate = 0.0001
+        self.learning_rate = 1e-3
+        self.channel_n = 1
 
         self.batch_size = 16
         

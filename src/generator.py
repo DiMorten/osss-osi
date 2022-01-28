@@ -31,7 +31,7 @@ class DataGeneratorWithCoords(keras.utils.Sequence):
 	'Generates data for Keras'
 	def __init__(self, inputs, labels, coords, samples_per_epoch = None,
 				batch_size=16, dim=(1002, 250, 250), label_dim=(1002, 250, 250),
-				n_channels=3, n_classes=4, shuffle=False, center_pixel = False, printCoords=False,
+				n_channels=1, n_classes=4, shuffle=False, center_pixel = False, printCoords=False,
 				augm = False, subsample = False):
 		'Initialization'
 		self.inputs = inputs

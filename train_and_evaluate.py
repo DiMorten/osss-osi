@@ -48,24 +48,26 @@ class Manager():
                 ds.extractCoords()
 
                 ds.addPadding()
-
+                ## ds.trainReduce(trainSize = 64)
+                # self.pt.num_ims_train = 64
                 ds.setTrainGenerator(rows = self.pt.h,
                         cols = self.pt.w,
                         num_ims = self.pt.num_ims_train,
                         patch_size = self.pt.patch_size)
 
-
                 self.modelManager = ModelManager(self.pt)
                 self.modelManager.setArchitecture(Unet)
                 ic(ds.Y_train.shape)
-                # self.modelManager.computeWeights(ds.Y_train.flatten())
+                
+                self.modelManager.computeWeights(ds.Y_train.flatten())
+                
                 self.modelManager.configure()
                 if self.pt.mode == "train":
 
                         self.modelManager.fit(ds.trainGenerator, ds.validationGenerator)
-                elif self.pt.mode == "inference":
-                        self.modelManager.loadWeights()
                 
+                self.modelManager.loadWeights()
+
                 self.evaluate(ds)        
                         
                 pdb.set_trace()
@@ -73,10 +75,10 @@ class Manager():
 if __name__ == '__main__':
         paramsTrainCustom = {
         "dataPath": Path("D:/jorg/phd/dataset_original/"),
-        "loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
-        
+        # "loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
+        "loss": "weighted_categorical_crossentropy", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"             
         "mode": "train",  # mode: train, inference
-        "modelId": "2"
+        "modelId": "weighted"
         }
 
         pt = paramsTrain(**paramsTrainCustom)
