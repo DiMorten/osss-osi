@@ -133,9 +133,9 @@ class Dataset():
 
             ic(self.patch_coords_test.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-            np.savez('coords.npz', name1 = self.patch_coords_train,
-                name2 = self.patch_coords_validation,
-                name3 = self.patch_coords_test)
+            np.savez('coords.npz', patch_coords_train = self.patch_coords_train,
+                patch_coords_validation = self.patch_coords_validation,
+                patch_coords_test = self.patch_coords_test)
         else:
             data = np.load('coords.npz')
             self.patch_coords_train = data['patch_coords_train']

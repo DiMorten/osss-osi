@@ -1,0 +1,7 @@
+name: tf2
+channels:
+  - defaults
+dependencies:
+  - tensorflow-gpu
+  - opencv
+  - gdal

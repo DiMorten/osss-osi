@@ -49,8 +49,9 @@ class Manager():
                 ds.extractCoords()
 
                 ds.addPadding()
-                ds.trainReduce(trainSize = 64)
-                self.pt.num_ims_train = 64
+                reducedTrainSize = 128
+                ds.trainReduce(trainSize = reducedTrainSize)
+                self.pt.num_ims_train = reducedTrainSize
                 ds.useLabelsAsInput()
 
                 ds.setTrainGenerator(rows = self.pt.h,
