@@ -18,7 +18,7 @@ import time
 from sklearn import metrics
 from pathlib import Path
 import pdb
-from src.modelArchitecture import Unet
+from src.modelArchitecture import Unet, ResUnet
 tf.random.set_seed(2)
 np.random.seed(2)
 
@@ -42,29 +42,36 @@ class Manager():
         def main(self):
                 ds = Dataset(self.pt)
                 ds.load()
+                ds.normalize()
 
                 ds.trainValSplit(0.15)
 
                 ds.extractCoords()
 
                 ds.addPadding()
-                ## ds.trainReduce(trainSize = 64)
-                # self.pt.num_ims_train = 64
+                ds.trainReduce(trainSize = 64)
+                self.pt.num_ims_train = 64
+                ds.useLabelsAsInput()
+
                 ds.setTrainGenerator(rows = self.pt.h,
                         cols = self.pt.w,
                         num_ims = self.pt.num_ims_train,
                         patch_size = self.pt.patch_size)
 
                 self.modelManager = ModelManager(self.pt)
-                self.modelManager.setArchitecture(Unet)
+                self.modelManager.setArchitecture(ResUnet)
                 ic(ds.Y_train.shape)
-                
+                ic(np.unique(ds.Y_train, return_counts=True))
+                ic(np.unique(ds.Y_validation, return_counts=True))
+                ic(np.unique(ds.Y_test, return_counts=True))
+                 
                 self.modelManager.computeWeights(ds.Y_train.flatten())
                 
                 self.modelManager.configure()
                 if self.pt.mode == "train":
-
-                        self.modelManager.fit(ds.trainGenerator, ds.validationGenerator)
+                        
+                        # self.modelManager.fit(ds.trainGenerator, ds.validationGenerator)
+                        self.modelManager.fit(ds.trainGenerator, ds.trainGenerator)
                 
                 self.modelManager.loadWeights()
 
@@ -75,7 +82,7 @@ class Manager():
 if __name__ == '__main__':
         paramsTrainCustom = {
         "dataPath": Path("D:/jorg/phd/dataset_original/"),
-        # "loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
+        #"loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
         "loss": "weighted_categorical_crossentropy", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"             
         "mode": "train",  # mode: train, inference
         "modelId": "weighted"

@@ -92,7 +92,9 @@ class Monitor(Callback):
 
     def getValidationData(self):
         # snip_batch_id = np.random.choice(len(self.validation))
-        snip_batch_ids = [0, 5, 10]
+        #snip_batch_ids = [0, 5, 10]
+        snip_batch_ids = [0, 1, 2]
+        ic(len(self.validation))
         for batch_index in range(len(self.validation)):
             val_targ = self.validation[batch_index][1] 
             val_in = self.validation[batch_index][0]  
@@ -115,12 +117,18 @@ class Monitor(Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         self.getValidationData()
+        ic(len(self.targ), len(self.pred))
         # plot_sample_ims(self.targ, self.pred)
-
         self.targ = np.asarray(self.targ)
         self.pred = np.asarray(self.pred)
-
+        ic(self.targ.shape, self.pred.shape)
+        ic(np.unique(self.pred, return_counts=True),
+            np.unique(self.targ, return_counts=True))        
         self.pred = self.pred[self.targ<self.classes]
         self.targ = self.targ[self.targ<self.classes]
+        ic(self.targ.shape, self.pred.shape)
+        ic(np.unique(self.pred, return_counts=True),
+            np.unique(self.targ, return_counts=True))
+
         f1 = np.round(f1_score(self.targ, self.pred, average=None)*100,2)
         ic(f1)

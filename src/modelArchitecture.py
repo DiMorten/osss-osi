@@ -26,9 +26,79 @@ import os
 os.getcwd()
 import pdb
 
+def resnet_block(x, n_filter, ind):
+    x_init = x
+
+    ## Conv 1
+    x = Conv2D(n_filter, (3, 3), activation='relu', padding="same", name = 'res1_net'+str(ind))(x)
+    x = Dropout(0.5, name = 'drop_net'+str(ind))(x, training = True)
+    # x = SpatialDropout2D(0.5, name = 'drop_net'+str(ind))(x, training = True)
+
+    ## Conv 2
+    x = Conv2D(n_filter, (3, 3), activation='relu', padding="same", name = 'res2_net'+str(ind))(x)
+    
+    ## Shortcut
+    s  = Conv2D(n_filter, (1, 1), activation='relu', padding="same", name = 'res3_net'+str(ind))(x_init)
+    
+    ## Add
+    x = Add()([x, s])
+    return x
+    
 class ModelArchitecture():
      def __init__(self, pt):
         self.pt = pt
+
+
+class ResUnet():
+    def __init__(self, img_shape = (128,128,25),class_n=10):
+        self.img_shape = img_shape
+        self.class_n = class_n
+
+    def build(self, nb_filters = [16, 32, 64, 128, 256]):
+        '''Base network to be shared (eq. to feature extraction)'''
+        #nb_filters = [16, 32, 64, 128]
+        input_img = Input(shape = self.img_shape, name="input_enc_net")
+        
+        res_block1 = resnet_block(input_img, nb_filters[0], 1) 
+        pool1 = MaxPool2D((2 , 2), name='pool_net1')(res_block1)
+        
+        res_block2 = resnet_block(pool1, nb_filters[1], 2)
+        pool2 = MaxPool2D((2 , 2), name='pool_net2')(res_block2)
+        
+        res_block3 = resnet_block(pool2, nb_filters[2], 3)
+        pool3 = MaxPool2D((2 , 2), name='pool_net3')(res_block3)
+        
+        res_block4 = resnet_block(pool3, nb_filters[3], 4)
+        pool4 = MaxPool2D((2 , 2), name='pool_net4')(res_block4)
+        
+        res_block5 = resnet_block(pool4, nb_filters[4], 5)
+        
+        #res_block6 = resnet_block(res_block5, nb_filters[2], 6)
+        
+        upsample4 = Conv2D(nb_filters[3], (3 , 3), activation = 'relu', padding = 'same', 
+                        name = 'upsampling_net4')(UpSampling2D(size = (2,2))(res_block5))
+
+        merged4 = concatenate([res_block4, upsample4], name='concatenate4')
+        
+        upsample3 = Conv2D(nb_filters[2], (3 , 3), activation = 'relu', padding = 'same', 
+                        name = 'upsampling_net3')(UpSampling2D(size = (2,2))(merged4))
+        
+        merged3 = concatenate([res_block3, upsample3], name='concatenate3')
+
+        upsample2 = Conv2D(nb_filters[1], (3 , 3), activation = 'relu', padding = 'same', 
+                        name = 'upsampling_net2')(UpSampling2D(size = (2,2))(merged3))
+                                                    
+        merged2 = concatenate([res_block2, upsample2], name='concatenate2')
+                                                                                            
+        upsample1 = Conv2D(nb_filters[0], (3 , 3), activation = 'relu', padding = 'same', 
+                        name = 'upsampling_net1')(UpSampling2D(size = (2,2))(merged2))
+        merged1 = concatenate([res_block1, upsample1], name='concatenate1')
+
+        output = Conv2D(self.class_n,(1,1), activation = 'softmax', padding = 'same', name = 'output')(merged1)
+                                                                                                            
+        model = Model(input_img, output)
+        ic(model.summary())
+        return model
 
 class Unet():
     def __init__(self, img_shape = (128,128,25),class_n=10):

@@ -28,6 +28,7 @@ import pdb
 
 from src.generator import DataGeneratorWithCoords
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 def extract_coords(num_ims, rows, cols, patch_size, overlap_percent=0):
 
     """
@@ -87,6 +88,25 @@ class Dataset():
         ic(np.average(self.X_train))
         # pdb.set_trace()
 
+    def channelFlatten(self, x):
+        shape = x.shape
+        return np.reshape(x, (-1, shape[-1])), shape
+    
+    def channelUnflatten(self, x, shape):
+        return np.reshape(x, shape)
+        
+    def normalize(self):
+        self.X_train, X_train_shape = self.channelFlatten(self.X_train)
+        self.X_test, X_test_shape = self.channelFlatten(self.X_test)
+        ic(self.X_train.shape, self.X_test.shape)
+
+        self.scaler = MinMaxScaler()
+        self.X_train = self.scaler.fit_transform(self.X_train)
+        self.X_test = self.scaler.transform(self.X_test)
+
+        self.X_train = self.channelUnflatten(self.X_train, X_train_shape)
+        self.X_test = self.channelUnflatten(self.X_test, X_test_shape)
+        ic(self.X_train.shape, self.X_test.shape)
 
 
     def extractCoords(self, num_ims = 1002, rows = 650, cols = 1250, patch_size = 250, overlap_percent=0):
@@ -96,21 +116,31 @@ class Dataset():
         Everything  in this function is made operating with
         the upper left corner of the patch
         """
+        loadCoords = False
+        if loadCoords == False:
+            self.patch_coords_train, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+                self.X_train.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
-        self.patch_coords_train, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
-            self.X_train.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
+            ic(self.patch_coords_train.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-        ic(self.patch_coords_train.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+            self.patch_coords_validation, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+                self.X_validation.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
-        self.patch_coords_validation, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
-            self.X_validation.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
+            ic(self.patch_coords_validation.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-        ic(self.patch_coords_validation.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+            self.patch_coords_test, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+                self.X_test.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
-        self.patch_coords_test, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
-            self.X_test.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
+            ic(self.patch_coords_test.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-        ic(self.patch_coords_test.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+            np.savez('coords.npz', name1 = self.patch_coords_train,
+                name2 = self.patch_coords_validation,
+                name3 = self.patch_coords_test)
+        else:
+            data = np.load('coords.npz')
+            self.patch_coords_train = data['patch_coords_train']
+            self.patch_coords_validation = data['patch_coords_validation']
+            self.patch_coords_test = data['patch_coords_test']
 
     def addPadding(self):
         pad_tuple = ((0, 0),) + self.pad_tuple_mask + ((0, 0),) 
@@ -196,3 +226,6 @@ class Dataset():
         
     def trainReduce(self, trainSize = 20):
         self.patch_coords_train = self.patch_coords_train[0:trainSize]
+    
+    def useLabelsAsInput(self):
+        self.X_train = np.expand_dims(self.Y_train.copy().astype(np.float16), axis = -1)

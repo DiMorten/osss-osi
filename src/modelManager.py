@@ -41,8 +41,8 @@ class ModelManager():
 		ic(self.model)
 	def computeWeights(self, y):
 		unique, count = np.unique(y, return_counts=True) 
-		#self.weights = np.max(count) / count
-		self.weights = compute_class_weight("balanced", np.unique(y), y)
+		self.weights = np.max(count) / count
+		#self.weights = compute_class_weight("balanced", np.unique(y), y)
 		self.weights = self.weights.astype(np.float16)
 		ic(np.unique(y, return_counts=True))
 		ic(self.weights)
@@ -78,7 +78,7 @@ class ModelManager():
 		es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
 		mc = ModelCheckpoint(self.model_name, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
 		monitor = Monitor(validationGenerator, self.pt.class_n)
-		callbacks = [es, mc, monitor, lr_reduce]
+		callbacks = [es, mc, monitor]
 
 		history = self.model.fit(trainGenerator,
 			batch_size = self.pt.batch_size, 
