@@ -25,11 +25,12 @@ t0 = time.time()
 import os
 os.getcwd()
 import pdb
-
+import pickle
 from src.generator import DataGeneratorWithCoords
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-def extract_coords(num_ims, rows, cols, patch_size, overlap_percent=0):
+def extract_coords(num_ims, rows, cols, patch_size, overlap_percent=0,
+    ignore_only_class0_patches = False, label = None):
 
     """
     Everything  in this function is made operating with
@@ -54,6 +55,9 @@ def extract_coords(num_ims, rows, cols, patch_size, overlap_percent=0):
     for im_id in range(num_ims):
         for i in range(k1):
             for j in range(k2):
+                if ignore_only_class0_patches == True:
+                    label_patch = label[im_id, i*stride:(i+1)*stride, j*stride:(j+1)*stride]
+                    if np.all(label_patch == 0): continue
                 patch_coords.append((im_id, i*stride, j*stride))
     print("Patch coords ",len(patch_coords))
     return np.asarray(patch_coords), step_row, step_col, overlap, pad_tuple_mask
@@ -118,29 +122,34 @@ class Dataset():
         """
         loadCoords = False
         if loadCoords == False:
-            self.patch_coords_train, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
-                self.X_train.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
+            self.coords_train, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+                self.X_train.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0,
+                ignore_only_class0_patches = False)
 
-            ic(self.patch_coords_train.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+            ic(self.coords_train.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-            self.patch_coords_validation, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+            self.coords_validation, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
                 self.X_validation.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
-            ic(self.patch_coords_validation.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+            ic(self.coords_validation.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-            self.patch_coords_test, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
+            self.coords_test, step_row, step_col, overlap, self.pad_tuple_mask = extract_coords(
                 self.X_test.shape[0], self.pt.h, self.pt.w, self.pt.patch_size, overlap_percent=0)
 
-            ic(self.patch_coords_test.shape, step_row, step_col, overlap, self.pad_tuple_mask)
+            ic(self.coords_test.shape, step_row, step_col, overlap, self.pad_tuple_mask)
 
-            np.savez('coords.npz', patch_coords_train = self.patch_coords_train,
-                patch_coords_validation = self.patch_coords_validation,
-                patch_coords_test = self.patch_coords_test)
+            np.savez('coords.npz', coords_train = self.coords_train,
+                coords_validation = self.coords_validation,
+                coords_test = self.coords_test)
+            with open('pad_tuple_mask.pickle', 'wb') as f:
+                pickle.dump(self.pad_tuple_mask, f)
         else:
             data = np.load('coords.npz')
-            self.patch_coords_train = data['patch_coords_train']
-            self.patch_coords_validation = data['patch_coords_validation']
-            self.patch_coords_test = data['patch_coords_test']
+            self.coords_train = data['coords_train']
+            self.coords_validation = data['coords_validation']
+            self.coords_test = data['coords_test']
+            with open('data.pickle', 'rb') as f:
+                self.pad_tuple_mask = pickle.load(f)
 
     def addPadding(self):
         pad_tuple = ((0, 0),) + self.pad_tuple_mask + ((0, 0),) 
@@ -202,7 +211,7 @@ class Dataset():
         ic(np.unique(self.Y_train, return_counts=True))
 
         self.trainGenerator = DataGeneratorWithCoords(self.X_train, self.Y_train, 
-					self.patch_coords_train, **params_train)
+					self.coords_train, **params_train)
 
         params_validation = params_train.copy()
         params_validation['shuffle'] = False
@@ -210,11 +219,11 @@ class Dataset():
         params_validation['subsample'] = False
 
         self.validationGenerator = DataGeneratorWithCoords(self.X_validation, self.Y_validation, 
-					self.patch_coords_validation, **params_validation)
+					self.coords_validation, **params_validation)
 
         params_test = params_validation.copy()
         self.testGenerator = DataGeneratorWithCoords(self.X_test, self.Y_test, 
-					self.patch_coords_test, **params_test)
+					self.coords_test, **params_test)
 
 
     def trainValSplit(self, validation_split=0.15):
@@ -225,7 +234,9 @@ class Dataset():
         ic(self.X_train.shape, self.X_validation.shape, self.Y_train.shape, self.Y_validation.shape)
         
     def trainReduce(self, trainSize = 20):
-        self.patch_coords_train = self.patch_coords_train[0:trainSize]
+        len_coords_train = len(self.coords_train)
+        idxs = np.random.choice(len_coords_train, trainSize)
+        self.coords_train = self.coords_train[idxs]
     
     def useLabelsAsInput(self):
         self.X_train = np.expand_dims(self.Y_train.copy().astype(np.float16), axis = -1)

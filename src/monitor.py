@@ -127,8 +127,8 @@ class Monitor(Callback):
         self.pred = self.pred[self.targ<self.classes]
         self.targ = self.targ[self.targ<self.classes]
         ic(self.targ.shape, self.pred.shape)
-        ic(np.unique(self.pred, return_counts=True),
-            np.unique(self.targ, return_counts=True))
+        # ic(np.unique(self.pred, return_counts=True),
+        #     np.unique(self.targ, return_counts=True))
 
         f1 = np.round(f1_score(self.targ, self.pred, average=None)*100,2)
         ic(f1)
