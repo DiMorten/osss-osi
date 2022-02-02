@@ -19,6 +19,7 @@ from sklearn import metrics
 from pathlib import Path
 import pdb
 from src.modelArchitecture import Unet, ResUnet
+
 tf.random.set_seed(2)
 np.random.seed(2)
 
@@ -33,7 +34,7 @@ from src.modelManager import ModelManager
 #ic(tf.config.list_physical_devices('GPU'))
 
 ic.configureOutput(includeContext=True)
-
+ic.disable()
 class Manager():
         def __init__(self, pt):
                 self.pt = pt
@@ -47,12 +48,19 @@ class Manager():
                 ds.trainValSplit(0.15)
 
                 ds.extractCoords()
-
+                ds.balance(samples_per_class = self.pt.samples_per_class)
                 ds.addPadding()
-                reducedTrainSize = 128
-                ds.trainReduce(trainSize = reducedTrainSize)
-                self.pt.num_ims_train = reducedTrainSize
-                ds.useLabelsAsInput()
+
+
+                ds.Y_train_patches = ds.getPatchesFromCoords(
+                                        ds.Y_train, ds.coords_train)
+                ic(ds.Y_train_patches.shape,
+                        np.unique(ds.Y_train_patches, return_counts=True))
+                # pdb.set_trace()
+                # reducedTrainSize = 128
+                # ds.trainReduce(trainSize = reducedTrainSize)
+                # self.pt.num_ims_train = reducedTrainSize
+                # ds.useLabelsAsInput()
 
                 ds.setTrainGenerator(rows = self.pt.h,
                         cols = self.pt.w,
@@ -66,7 +74,8 @@ class Manager():
                 ic(np.unique(ds.Y_validation, return_counts=True))
                 ic(np.unique(ds.Y_test, return_counts=True))
                  
-                self.modelManager.computeWeights(ds.Y_train.flatten())
+                # self.modelManager.computeWeights(ds.Y_train.flatten())
+                self.modelManager.computeWeights(ds.Y_train_patches.flatten())
                 
                 self.modelManager.configure()
                 if self.pt.mode == "train":
@@ -83,7 +92,7 @@ class Manager():
 if __name__ == '__main__':
         paramsTrainCustom = {
         "dataPath": Path("D:/jorg/phd/dataset_original/"),
-        #"loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
+        # "loss": "categorical_focal", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"     
         "loss": "weighted_categorical_crossentropy", # available: "categorical_crossentropy", "categorical_focal", "weighted_categorical_crossentropy"             
         "mode": "train",  # mode: train, inference
         "modelId": "weighted"

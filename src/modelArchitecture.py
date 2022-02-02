@@ -55,6 +55,7 @@ class ResUnet():
         self.class_n = class_n
 
     def build(self, nb_filters = [16, 32, 64, 128, 256]):
+        # nb_filters = [64, 128, 256, 128, 64]
         '''Base network to be shared (eq. to feature extraction)'''
         #nb_filters = [16, 32, 64, 128]
         input_img = Input(shape = self.img_shape, name="input_enc_net")

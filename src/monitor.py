@@ -131,4 +131,4 @@ class Monitor(Callback):
         #     np.unique(self.targ, return_counts=True))
 
         f1 = np.round(f1_score(self.targ, self.pred, average=None)*100,2)
-        ic(f1)
+        print("validation f1", f1)

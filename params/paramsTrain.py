@@ -14,4 +14,6 @@ class paramsTrain():
         self.channel_n = 1
 
         self.batch_size = 16
+
+        self.samples_per_class = 2000
         

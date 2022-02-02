@@ -32,6 +32,19 @@ from src.monitor import Monitor
 from sklearn.metrics import f1_score, accuracy_score, jaccard_score
 from sklearn.utils.class_weight import compute_class_weight
 from icecream import ic
+
+def plot_history(model, feature, path_file = None):
+
+	val = "val_" + feature
+	
+	plt.xlabel('Epoch Number')
+	plt.ylabel(feature)
+	plt.plot(model.history[feature])
+	plt.plot(model.history[val])
+	plt.legend(["train_"+feature, val])    
+	if path_file:
+		plt.savefig(path_file)
+		
 class ModelManager():
 	def __init__(self, pt, modelId = ""):
 		self.pt = pt
@@ -87,6 +100,8 @@ class ModelManager():
 			callbacks = callbacks,
 			shuffle = False
 			)
+
+		plot_history(history, 'loss', path_file='loss_fig.png')
 	
 	def evaluate(self, ds):
 		ds.predictions = self.infer(ds.X_test, ds.Y_test)
