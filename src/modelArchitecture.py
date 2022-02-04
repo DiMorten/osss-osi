@@ -55,30 +55,30 @@ class ResUnet():
         self.class_n = class_n
 
     def build(self, nb_filters = [16, 32, 64, 128, 256]):
-        # nb_filters = [64, 128, 256, 128, 64]
+        nb_filters = [64, 128, 256, 128, 64]
         '''Base network to be shared (eq. to feature extraction)'''
         #nb_filters = [16, 32, 64, 128]
         input_img = Input(shape = self.img_shape, name="input_enc_net")
-        
+        # ic(K.int_shape(input_img))
         res_block1 = resnet_block(input_img, nb_filters[0], 1) 
         pool1 = MaxPool2D((2 , 2), name='pool_net1')(res_block1)
-        
+        # ic(K.int_shape(pool1))
         res_block2 = resnet_block(pool1, nb_filters[1], 2)
         pool2 = MaxPool2D((2 , 2), name='pool_net2')(res_block2)
-        
+        # ic(K.int_shape(pool2))
         res_block3 = resnet_block(pool2, nb_filters[2], 3)
         pool3 = MaxPool2D((2 , 2), name='pool_net3')(res_block3)
-        
+        # ic(K.int_shape(pool3))
         res_block4 = resnet_block(pool3, nb_filters[3], 4)
         pool4 = MaxPool2D((2 , 2), name='pool_net4')(res_block4)
         
         res_block5 = resnet_block(pool4, nb_filters[4], 5)
-        
+        # ic(K.int_shape(res_block5))
         #res_block6 = resnet_block(res_block5, nb_filters[2], 6)
         
         upsample4 = Conv2D(nb_filters[3], (3 , 3), activation = 'relu', padding = 'same', 
                         name = 'upsampling_net4')(UpSampling2D(size = (2,2))(res_block5))
-
+        # ic(K.int_shape(upsample4))
         merged4 = concatenate([res_block4, upsample4], name='concatenate4')
         
         upsample3 = Conv2D(nb_filters[2], (3 , 3), activation = 'relu', padding = 'same', 

@@ -179,6 +179,9 @@ class Dataset():
 		# pdb.set_trace()
 
 		return x
+	def removePadding(self, x):
+		x = x[:, :-6, :-14]
+		return x
 	def toOneHot(self, label, class_n):
 
 		# convert to one-hot
@@ -318,3 +321,14 @@ class Dataset():
 						coord[2]:coord[2]+patch_size]
 			Y[idx] = patch
 		return Y
+
+	def addPaddingInference(self):
+		mask_pad = ((0,0), (0,6), (0,14), (0,0))
+		mask_pad_label = ((0,0), (0,6), (0,14))
+
+		self.X_test = np.pad(self.X_test, mask_pad, mode = 'symmetric')
+		self.Y_test = np.pad(self.Y_test, mask_pad_label, mode = 'symmetric')
+		ic(self.X_test.shape)
+		pdb.set_trace()
+
+		

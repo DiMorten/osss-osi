@@ -15,5 +15,7 @@ class paramsTrain():
 
         self.batch_size = 16
 
-        self.samples_per_class = 2000
+        self.samples_per_class = 5000
+
+        self.patch_h, self.patch_w = (self.patch_size, self.patch_size)
         

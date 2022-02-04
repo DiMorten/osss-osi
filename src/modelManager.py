@@ -7,7 +7,6 @@ from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 import tensorflow.keras.backend as K
-import tensorflow_addons as tfa
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -50,7 +49,7 @@ class ModelManager():
 		self.pt = pt
 		self.model_name = "results/best_model" + self.pt.modelId + ".h5"
 	def setArchitecture(self, modelArchitecture):
-		self.model = modelArchitecture(img_shape = (self.pt.patch_size, self.pt.patch_size, self.pt.channel_n), class_n = self.pt.class_n).build()
+		self.model = modelArchitecture(img_shape = (self.pt.patch_h, self.pt.patch_w, self.pt.channel_n), class_n = self.pt.class_n).build()
 		ic(self.model)
 	def computeWeights(self, y):
 		unique, count = np.unique(y, return_counts=True) 
@@ -84,18 +83,21 @@ class ModelManager():
 	
 	def loadWeights(self):
 		ic(self.model_name)
-		self.model = load_model(self.model_name, compile=False)
+		self.model.load_weights(self.model_name)
+#		self.model = load_model(self.model_name, compile=False)
+		ic(self.model.summary())
 
 	def fit(self, trainGenerator, validationGenerator):
 		lr_reduce = ReduceLROnPlateau(factor=0.9, min_delta=0.0001, patience=5, verbose=1)
 		es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
 		mc = ModelCheckpoint(self.model_name, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
 		monitor = Monitor(validationGenerator, self.pt.class_n)
-		callbacks = [es, mc, monitor]
+		# callbacks = [es, mc, monitor]
+		callbacks = [es, mc]
 
 		history = self.model.fit(trainGenerator,
 			batch_size = self.pt.batch_size, 
-			epochs = 70, 
+			epochs = 200, 
 			validation_data=validationGenerator,
 			callbacks = callbacks,
 			shuffle = False
@@ -170,6 +172,25 @@ class ModelManager():
 			return predictions, prediction_probabilities
 		return predictions
 
+	def infer(self, X, Y, overlap_percent=0, save_prediction_probability = False):
+		ic(self.model.summary())
+		# Y = Y[]
+		num_ims, rows, cols, _ = X.shape
+		
+		predictions = np.zeros_like(Y)
+		prediction_probabilities = np.zeros((Y.shape[0], Y.shape[1], Y.shape[2], self.pt.class_n), dtype = np.float16)
+		for im_id in range(num_ims):
+			x = X[im_id][np.newaxis,...]
+			# ic(x.shape)
+			prediction_probability = self.model.predict(x)
+			prediction = prediction_probability.argmax(axis=-1)
+			predictions[im_id] = prediction.copy()
+			if save_prediction_probability == True:
+				prediction_probabilities[im_id] = prediction_probability.copy()
+
+		if save_prediction_probability == True:		
+			return predictions, prediction_probabilities
+		return predictions
 
 	def loadIntermediateFeatures(self, in_, prediction_dtype = np.float16, debug  = 1):
 	#print(model.summary())
