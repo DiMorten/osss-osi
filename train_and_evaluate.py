@@ -83,10 +83,8 @@ class Manager():
                         self.modelManager.computeWeights(ds.Y_train_patches.flatten())
                 
                         self.modelManager.configure()
-                if self.pt.mode == "train":
-                        
-                        # self.modelManager.fit(ds.trainGenerator, ds.validationGenerator)
-                        self.modelManager.fit(ds.trainGenerator, ds.trainGenerator)
+
+                        self.modelManager.fit(ds.trainGenerator, ds.validationGenerator)
                 
                 self.modelManager.loadWeights()
 
